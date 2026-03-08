@@ -1,0 +1,1 @@
+enum PreferenceStorage { shared, secure }

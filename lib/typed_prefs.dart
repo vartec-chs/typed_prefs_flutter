@@ -1,5 +1,9 @@
-/// A Calculator.
-class Calculator {
-  /// Returns [value] plus 1.
-  int addOne(int value) => value + 1;
-}
+export 'src/annotations.dart';
+export 'src/core/pref_serializer.dart';
+export 'src/core/pref_types.dart';
+export 'src/core/preference_key.dart';
+export 'src/core/preferences_service.dart';
+export 'src/core/preferences_storage_router.dart';
+export 'src/core/storage_adapters.dart';
+export 'src/core/typed_pref_accessor.dart';
+export 'src/serializers/built_in_serializers.dart';

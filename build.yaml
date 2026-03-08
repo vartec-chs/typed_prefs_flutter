@@ -1,0 +1,19 @@
+targets:
+  $default:
+    builders:
+      typed_prefs|typed_prefs_builder:
+        enabled: true
+        generate_for:
+          - lib/**.dart
+          - test/**.dart
+          - example/**.dart
+
+builders:
+  typed_prefs_builder:
+    import: 'package:typed_prefs/builder.dart'
+    builder_factories: ['typedPrefsBuilder']
+    build_extensions: { '.dart': ['.typed_prefs.g.part'] }
+    auto_apply: dependents
+    build_to: cache
+    runs_before: ['source_gen|combining_builder']
+    applies_builders: ['source_gen|combining_builder']
