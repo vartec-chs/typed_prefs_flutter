@@ -26,6 +26,7 @@ class PrefsGenerator extends GeneratorForAnnotation<Prefs> {
     final className = element.displayName;
     final accessorName = annotation.peek('accessorName')?.stringValue;
     final keysName = annotation.peek('keysName')?.stringValue;
+    final classProtected = annotation.peek('protected')?.boolValue ?? false;
     final resolvedAccessorName = accessorName ?? '${className}Store';
     final resolvedKeysName = keysName ?? '${className}Keys';
     final extensionName = '${className}TypedPrefsExtension';
@@ -208,7 +209,10 @@ class PrefsGenerator extends GeneratorForAnnotation<Prefs> {
     );
   }
 
-  _GeneratedField _readField(FieldElement field) {
+  _GeneratedField _readField(
+    FieldElement field, {
+    bool classProtected = false,
+  }) {
     final type = field.type;
     if (type is! InterfaceType || type.typeArguments.length != 1) {
       throw InvalidGenerationSourceError(
@@ -227,7 +231,8 @@ class PrefsGenerator extends GeneratorForAnnotation<Prefs> {
     final storageKey =
         prefReader?.peek('key')?.stringValue ?? _snakeCase(fieldName);
     final description = prefReader?.peek('description')?.stringValue ?? '';
-    final isProtected = prefReader?.peek('protected')?.boolValue ?? false;
+    final isProtected =
+        classProtected || (prefReader?.peek('protected')?.boolValue ?? false);
     final serializerType = prefReader?.peek('serializer')?.typeValue;
     final defaultValueObject = prefReader?.peek('defaultValue')?.objectValue;
 

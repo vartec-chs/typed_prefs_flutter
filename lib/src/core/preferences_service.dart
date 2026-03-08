@@ -8,23 +8,42 @@ import 'preferences_storage_router.dart';
 import 'storage_adapters.dart';
 
 class PreferencesService {
+  static PreferencesService? _instance;
+
+  static PreferencesService get instance {
+    assert(
+      _instance != null,
+      'PreferencesService is not initialized. '
+      'Call PreferencesService.initialize() before accessing instance.',
+    );
+    return _instance!;
+  }
+
   final PreferencesStorageRouter router;
   final Map<String, StreamController<Object?>> _controllers =
       <String, StreamController<Object?>>{};
 
-  PreferencesService(this.router);
+  PreferencesService._(this.router);
 
-  static Future<PreferencesService> create({
+  static Future<PreferencesService> initialize({
     SharedPreferences? sharedPreferences,
     FlutterSecureStorage secureStorage = const FlutterSecureStorage(),
   }) async {
+    if (_instance != null) return _instance!;
     final shared = sharedPreferences ?? await SharedPreferences.getInstance();
-    return PreferencesService(
+    _instance = PreferencesService._(
       PreferencesStorageRouter(
         shared: SharedPreferencesStoreAdapter(shared),
         secure: FlutterSecureStorageAdapter(secureStorage),
       ),
     );
+    return _instance!;
+  }
+
+  /// Resets the singleton — intended for testing only.
+  static void resetForTesting() {
+    _instance?.dispose();
+    _instance = null;
   }
 
   Future<bool> contains<T>(PreferenceKey<T> key) => router.exists(key);

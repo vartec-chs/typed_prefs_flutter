@@ -2,7 +2,11 @@ class Prefs {
   final String? accessorName;
   final String? keysName;
 
-  const Prefs({this.accessorName, this.keysName});
+  /// When true, all keys in this class are stored in secure storage,
+  /// overriding any individual [@Pref(protected:)] settings.
+  final bool protected;
+
+  const Prefs({this.accessorName, this.keysName, this.protected = false});
 }
 
 class Pref {

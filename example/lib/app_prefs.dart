@@ -15,12 +15,11 @@ class DateTimeSerializer extends PrefSerializer<DateTime> {
 
 // ── sub-group: auth ─────────────────────────────────────────────────────────
 
-@Prefs()
+@Prefs(protected: true)
 class AuthPrefs {
-  @Pref(protected: true)
   static const vaultKey = PrefKey<String>();
 
-  @Pref(defaultValue: false, protected: true)
+  @Pref(defaultValue: false)
   static const biometricsEnabled = PrefKey<bool>();
 
   @Pref(serializer: DateTimeSerializer)

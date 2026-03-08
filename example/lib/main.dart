@@ -5,9 +5,9 @@ import 'app_prefs.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  final service = await PreferencesService.create();
+  final service = await PreferencesService.initialize();
   final prefs = service.appPrefs;
-  final themeMode = await prefs.getThemeMode();
+  final themeMode = await prefs.settings.getThemeMode();
 
   runApp(
     TypedPrefsExample(
@@ -43,8 +43,8 @@ class _TypedPrefsExampleState extends State<TypedPrefsExample> {
       ThemeMode.dark => ThemeMode.system,
     };
 
-    await _prefs.setThemeMode(nextMode);
-    await _prefs.setLastSyncAt(DateTime.now());
+    await _prefs.settings.setThemeMode(nextMode);
+    await _prefs.auth.setLastSyncAt(DateTime.now());
 
     if (!mounted) {
       return;
@@ -76,7 +76,7 @@ class _TypedPrefsExampleState extends State<TypedPrefsExample> {
               ),
               const SizedBox(height: 24),
               StreamBuilder<DateTime?>(
-                stream: _prefs.watchLastSyncAt(),
+                stream: _prefs.auth.watchLastSyncAt(),
                 builder: (context, snapshot) {
                   final value = snapshot.data;
                   return Text(
