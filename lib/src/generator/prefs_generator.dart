@@ -45,6 +45,8 @@ class PrefsGenerator extends GeneratorForAnnotation<Prefs> {
       );
     }
 
+    _checkDuplicateKeys(prefFields, className, element);
+
     final buffer = StringBuffer()
       ..writeln('abstract final class $resolvedKeysName {');
 
@@ -111,10 +113,30 @@ class PrefsGenerator extends GeneratorForAnnotation<Prefs> {
     return buffer.toString();
   }
 
+  void _checkDuplicateKeys(
+    List<_GeneratedField> fields,
+    String className,
+    Element element,
+  ) {
+    final seen = <String>{};
+    for (final field in fields) {
+      if (!seen.add(field.storageKey)) {
+        throw InvalidGenerationSourceError(
+          'Duplicate storage key "${field.storageKey}" in class $className. '
+          'Use @Pref(key: \'...\') to assign unique keys.',
+          element: element,
+        );
+      }
+    }
+  }
+
+  static const _prefKeyChecker = TypeChecker.typeNamed(PrefKey);
+
   bool _isPrefKeyField(FieldElement field) {
     final fieldType = field.type;
+
     return fieldType is InterfaceType &&
-        fieldType.element.displayName == 'PrefKey';
+        _prefKeyChecker.isAssignableFromType(fieldType);
   }
 
   _GeneratedField _readField(FieldElement field) {
@@ -126,9 +148,7 @@ class PrefsGenerator extends GeneratorForAnnotation<Prefs> {
       );
     }
 
-    final prefAnnotation = const TypeChecker.typeNamed(
-      Pref,
-    ).firstAnnotationOf(field);
+    final prefAnnotation = _prefKeyChecker.firstAnnotationOf(field);
     final prefReader = prefAnnotation == null
         ? null
         : ConstantReader(prefAnnotation);
@@ -141,6 +161,8 @@ class PrefsGenerator extends GeneratorForAnnotation<Prefs> {
     final isProtected = prefReader?.peek('protected')?.boolValue ?? false;
     final serializerType = prefReader?.peek('serializer')?.typeValue;
     final defaultValueObject = prefReader?.peek('defaultValue')?.objectValue;
+
+    _validateType(prefType, serializerType, field);
     final hasDefaultValue = defaultValueObject != null;
     final isNullable = prefType.nullabilitySuffix == NullabilitySuffix.question;
 
@@ -158,6 +180,37 @@ class PrefsGenerator extends GeneratorForAnnotation<Prefs> {
           : _dartObjectToCode(defaultValueObject),
       serializerCode: _serializerExpression(prefType, serializerType),
     );
+  }
+
+  void _validateType(
+    DartType prefType,
+    DartType? serializerType,
+    FieldElement field,
+  ) {
+    if (serializerType != null) return;
+    if (prefType.element is EnumElement) return;
+
+    final baseType = prefType.getDisplayString().replaceFirst('?', '');
+    const builtInSerialized = {
+      'DateTime',
+      'Duration',
+      'Uri',
+      'BigInt',
+      'List<String>',
+      'Map<String, String>',
+    };
+    const nativePrimitives = {'String', 'bool', 'int', 'double'};
+
+    if (!nativePrimitives.contains(baseType) &&
+        !builtInSerialized.contains(baseType)) {
+      throw InvalidGenerationSourceError(
+        'Type "$baseType" for field "${field.displayName}" is not supported. '
+        'Add @Pref(serializer: YourSerializer) or use a built-in supported type '
+        '(String, bool, int, double, DateTime, Duration, Uri, BigInt, '
+        'List<String>, Map<String, String>, or an enum).',
+        element: field,
+      );
+    }
   }
 
   String? _serializerExpression(DartType prefType, DartType? serializerType) {

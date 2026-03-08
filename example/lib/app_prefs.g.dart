@@ -10,28 +10,25 @@ abstract final class AppPrefsKeys {
   static const themeMode = PreferenceKey<ThemeMode>(
     key: 'theme_mode',
     storage: PreferenceStorage.shared,
-    defaultValue: ThemeMode.system,
     serializer: EnumPrefSerializer<ThemeMode>(ThemeMode.values),
   );
   static const vaultKey = PreferenceKey<String>(
     key: 'vault_key',
-    storage: PreferenceStorage.secure,
+    storage: PreferenceStorage.shared,
   );
   static const biometricsEnabled = PreferenceKey<bool>(
     key: 'biometrics_enabled',
-    storage: PreferenceStorage.secure,
-    defaultValue: false,
+    storage: PreferenceStorage.shared,
   );
   static const preferredLocales = PreferenceKey<List<String>>(
     key: 'preferred_locales',
     storage: PreferenceStorage.shared,
-    defaultValue: ['ru', 'en'],
     serializer: StringListPrefSerializer(),
   );
   static const lastSyncAt = PreferenceKey<DateTime>(
     key: 'last_sync_at',
     storage: PreferenceStorage.shared,
-    serializer: DateTimeSerializer(),
+    serializer: DateTimePrefSerializer(),
   );
 }
 
@@ -43,12 +40,10 @@ class AppPrefsStore {
   TypedPrefAccessor<ThemeMode> get themeMode =>
       TypedPrefAccessor<ThemeMode>(_service, AppPrefsKeys.themeMode);
 
-  Future<ThemeMode> getThemeMode() =>
-      themeMode.get().then((value) => value as ThemeMode);
+  Future<ThemeMode?> getThemeMode() => themeMode.get();
   Future<void> setThemeMode(ThemeMode value) => themeMode.set(value);
   Future<void> removeThemeMode() => themeMode.remove();
-  Stream<ThemeMode> watchThemeMode() =>
-      themeMode.watch().where((value) => value != null).cast<ThemeMode>();
+  Stream<ThemeMode?> watchThemeMode() => themeMode.watch();
 
   TypedPrefAccessor<String> get vaultKey =>
       TypedPrefAccessor<String>(_service, AppPrefsKeys.vaultKey);
@@ -61,25 +56,19 @@ class AppPrefsStore {
   TypedPrefAccessor<bool> get biometricsEnabled =>
       TypedPrefAccessor<bool>(_service, AppPrefsKeys.biometricsEnabled);
 
-  Future<bool> getBiometricsEnabled() =>
-      biometricsEnabled.get().then((value) => value as bool);
+  Future<bool?> getBiometricsEnabled() => biometricsEnabled.get();
   Future<void> setBiometricsEnabled(bool value) => biometricsEnabled.set(value);
   Future<void> removeBiometricsEnabled() => biometricsEnabled.remove();
-  Stream<bool> watchBiometricsEnabled() =>
-      biometricsEnabled.watch().where((value) => value != null).cast<bool>();
+  Stream<bool?> watchBiometricsEnabled() => biometricsEnabled.watch();
 
   TypedPrefAccessor<List<String>> get preferredLocales =>
       TypedPrefAccessor<List<String>>(_service, AppPrefsKeys.preferredLocales);
 
-  Future<List<String>> getPreferredLocales() =>
-      preferredLocales.get().then((value) => value as List<String>);
+  Future<List<String>?> getPreferredLocales() => preferredLocales.get();
   Future<void> setPreferredLocales(List<String> value) =>
       preferredLocales.set(value);
   Future<void> removePreferredLocales() => preferredLocales.remove();
-  Stream<List<String>> watchPreferredLocales() => preferredLocales
-      .watch()
-      .where((value) => value != null)
-      .cast<List<String>>();
+  Stream<List<String>?> watchPreferredLocales() => preferredLocales.watch();
 
   TypedPrefAccessor<DateTime> get lastSyncAt =>
       TypedPrefAccessor<DateTime>(_service, AppPrefsKeys.lastSyncAt);

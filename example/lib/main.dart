@@ -9,7 +9,12 @@ Future<void> main() async {
   final prefs = service.appPrefs;
   final themeMode = await prefs.getThemeMode();
 
-  runApp(TypedPrefsExample(service: service, initialThemeMode: themeMode));
+  runApp(
+    TypedPrefsExample(
+      service: service,
+      initialThemeMode: themeMode ?? ThemeMode.system,
+    ),
+  );
 }
 
 class TypedPrefsExample extends StatefulWidget {
