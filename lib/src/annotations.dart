@@ -24,3 +24,17 @@ class Pref {
 class PrefKey<T> {
   const PrefKey();
 }
+
+/// Marks a static const field as a reference to another [@Prefs]-annotated
+/// class. The generator will emit a sub-accessor getter for it.
+///
+/// ```dart
+/// @Prefs()
+/// class AppPrefs {
+///   static const auth = PrefGroupKey<AuthPrefs>();
+///   static const settings = PrefGroupKey<SettingsPrefs>();
+/// }
+/// ```
+class PrefGroupKey<T> {
+  const PrefGroupKey();
+}

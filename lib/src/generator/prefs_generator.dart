@@ -31,58 +31,79 @@ class PrefsGenerator extends GeneratorForAnnotation<Prefs> {
     final extensionName = '${className}TypedPrefsExtension';
     final extensionGetter = _lowerCamel(className);
 
-    final prefFields = element.fields
+    final allConst = element.fields
         .where((field) => !field.isSynthetic)
         .where((field) => field.isStatic && field.isConst)
-        .where(_isPrefKeyField)
-        .map(_readField)
         .toList();
 
-    if (prefFields.isEmpty) {
+    final prefFields = allConst.where(_isPrefKeyField).map(_readField).toList();
+    final groupFields = allConst
+        .where(_isGroupKeyField)
+        .map(_readGroupField)
+        .toList();
+
+    if (prefFields.isEmpty && groupFields.isEmpty) {
       throw InvalidGenerationSourceError(
-        'Class $className does not declare any static const PrefKey fields.',
+        'Class $className does not declare any static const PrefKey '
+        'or PrefGroupKey fields.',
         element: element,
       );
     }
 
-    _checkDuplicateKeys(prefFields, className, element);
-
-    final buffer = StringBuffer()
-      ..writeln('abstract final class $resolvedKeysName {');
-
-    for (final field in prefFields) {
-      buffer
-        ..writeln(
-          '  static const ${field.name} = PreferenceKey<${field.typeName}>(',
-        )
-        ..writeln("    key: '${field.storageKey}',")
-        ..writeln(
-          '    storage: PreferenceStorage.${field.protected ? 'secure' : 'shared'},',
-        );
-
-      if (field.defaultValueCode != null) {
-        buffer.writeln('    defaultValue: ${field.defaultValueCode},');
-      }
-
-      if (field.description.isNotEmpty) {
-        buffer.writeln("    description: '${_escape(field.description)}',");
-      }
-
-      if (field.serializerCode != null) {
-        buffer.writeln('    serializer: ${field.serializerCode},');
-      }
-
-      buffer.writeln('  );');
+    if (prefFields.isNotEmpty) {
+      _checkDuplicateKeys(prefFields, className, element);
     }
 
+    final buffer = StringBuffer();
+
+    // Keys class — only when there are direct pref fields.
+    if (prefFields.isNotEmpty) {
+      buffer.writeln('abstract final class $resolvedKeysName {');
+
+      for (final field in prefFields) {
+        buffer
+          ..writeln(
+            '  static const ${field.name} = PreferenceKey<${field.typeName}>(',
+          )
+          ..writeln("    key: '${field.storageKey}',")
+          ..writeln(
+            '    storage: PreferenceStorage.${field.protected ? 'secure' : 'shared'},',
+          );
+
+        if (field.defaultValueCode != null) {
+          buffer.writeln('    defaultValue: ${field.defaultValueCode},');
+        }
+
+        if (field.description.isNotEmpty) {
+          buffer.writeln("    description: '${_escape(field.description)}',");
+        }
+
+        if (field.serializerCode != null) {
+          buffer.writeln('    serializer: ${field.serializerCode},');
+        }
+
+        buffer.writeln('  );');
+      }
+
+      buffer
+        ..writeln('}')
+        ..writeln();
+    }
+
+    // Accessor class — always generated.
     buffer
-      ..writeln('}')
-      ..writeln()
       ..writeln('class $resolvedAccessorName {')
       ..writeln('  final PreferencesService _service;')
       ..writeln()
       ..writeln('  const $resolvedAccessorName(this._service);')
       ..writeln();
+
+    for (final group in groupFields) {
+      buffer
+        ..writeln('  ${group.accessorClassName} get ${group.fieldName} =>')
+        ..writeln('      ${group.accessorClassName}(_service);')
+        ..writeln();
+    }
 
     for (final field in prefFields) {
       final pascal = _upperCamel(field.name);
@@ -131,12 +152,60 @@ class PrefsGenerator extends GeneratorForAnnotation<Prefs> {
   }
 
   static const _prefKeyChecker = TypeChecker.typeNamed(PrefKey);
+  static const _prefGroupKeyChecker = TypeChecker.typeNamed(PrefGroupKey);
+  static const _prefAnnotationChecker = TypeChecker.typeNamed(Pref);
+  static const _prefsAnnotationChecker = TypeChecker.typeNamed(Prefs);
 
   bool _isPrefKeyField(FieldElement field) {
     final fieldType = field.type;
-
     return fieldType is InterfaceType &&
         _prefKeyChecker.isAssignableFromType(fieldType);
+  }
+
+  bool _isGroupKeyField(FieldElement field) {
+    final fieldType = field.type;
+    return fieldType is InterfaceType &&
+        _prefGroupKeyChecker.isAssignableFromType(fieldType);
+  }
+
+  _GeneratedGroupField _readGroupField(FieldElement field) {
+    final type = field.type;
+    if (type is! InterfaceType || type.typeArguments.length != 1) {
+      throw InvalidGenerationSourceError(
+        'PrefGroupKey field ${field.displayName} must have exactly one type argument.',
+        element: field,
+      );
+    }
+
+    final groupType = type.typeArguments.single;
+    if (groupType is! InterfaceType) {
+      throw InvalidGenerationSourceError(
+        'PrefGroupKey<T>: T must be a class annotated with @Prefs.',
+        element: field,
+      );
+    }
+
+    final referencedClass = groupType.element;
+    final prefsAnnotation = _prefsAnnotationChecker.firstAnnotationOf(
+      referencedClass,
+    );
+
+    if (prefsAnnotation == null) {
+      throw InvalidGenerationSourceError(
+        'PrefGroupKey<${referencedClass.displayName}> references a class '
+        'that is not annotated with @Prefs.',
+        element: field,
+      );
+    }
+
+    final accessorName =
+        ConstantReader(prefsAnnotation).peek('accessorName')?.stringValue ??
+        '${referencedClass.displayName}Store';
+
+    return _GeneratedGroupField(
+      fieldName: field.displayName,
+      accessorClassName: accessorName,
+    );
   }
 
   _GeneratedField _readField(FieldElement field) {
@@ -148,7 +217,7 @@ class PrefsGenerator extends GeneratorForAnnotation<Prefs> {
       );
     }
 
-    final prefAnnotation = _prefKeyChecker.firstAnnotationOf(field);
+    final prefAnnotation = _prefAnnotationChecker.firstAnnotationOf(field);
     final prefReader = prefAnnotation == null
         ? null
         : ConstantReader(prefAnnotation);
@@ -381,4 +450,14 @@ class _GeneratedField {
     return '  Stream<$readTypeName> watch$pascalName() => '
         '$name.watch().where((value) => value != null).cast<$readTypeName>();';
   }
+}
+
+class _GeneratedGroupField {
+  final String fieldName;
+  final String accessorClassName;
+
+  const _GeneratedGroupField({
+    required this.fieldName,
+    required this.accessorClassName,
+  });
 }
