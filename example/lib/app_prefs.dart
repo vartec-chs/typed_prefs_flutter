@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:local_auth/local_auth.dart';
 import 'package:typed_prefs/typed_prefs.dart';
 
 part 'app_prefs.g.dart';
@@ -13,13 +14,72 @@ class DateTimeSerializer extends PrefSerializer<DateTime> {
   String encode(DateTime value) => value.toIso8601String();
 }
 
+// ── write policies ──────────────────────────────────────────────────────────
+
+/// Allows writing only once — throws if the value is already set.
+class WriteOncePolicy implements PreferenceWritePolicy {
+  const WriteOncePolicy();
+
+  @override
+  Future<void> authorize<T>(PreferenceWriteRequest<T> request) async {
+    if (request.operation == PreferenceWriteOperation.set &&
+        request.currentValue != null) {
+      throw const PreferenceWriteDeniedException(
+        'This preference can only be written once.',
+      );
+    }
+  }
+}
+
+/// Logs every write operation to the console (example audit policy).
+class AuditLogPolicy implements PreferenceWritePolicy {
+  const AuditLogPolicy();
+
+  @override
+  void authorize<T>(PreferenceWriteRequest<T> request) {
+    // ignore: avoid_print
+    print(
+      '[audit] ${request.operation.name} '
+      '"${request.key.key}": '
+      '${request.currentValue} → ${request.nextValue}',
+    );
+  }
+}
+
+/// Requires successful biometric (or device credential) authentication
+/// before any write or remove operation on the protected key.
+class BiometricAuthPolicy implements PreferenceWritePolicy {
+  final LocalAuthentication _auth;
+  final String localizedReason;
+
+  const BiometricAuthPolicy(
+    this._auth, {
+    this.localizedReason = 'Authenticate to change secure settings',
+  });
+
+  @override
+  Future<void> authorize<T>(PreferenceWriteRequest<T> request) async {
+    final authenticated = await _auth.authenticate(
+      localizedReason: localizedReason,
+    );
+    if (!authenticated) {
+      throw const PreferenceWriteDeniedException(
+        'Biometric authentication failed or was cancelled.',
+      );
+    }
+  }
+}
+
 // ── sub-group: auth ─────────────────────────────────────────────────────────
 
 @Prefs(protected: true)
 class AuthPrefs {
+  /// Set once — write policy rejects subsequent overwrites.
+  @Pref(writePolicy: 'writeOnce')
   static const vaultKey = PrefKey<String>();
 
-  @Pref(defaultValue: false)
+  /// Requires biometric confirmation before toggling.
+  @Pref(defaultValue: false, writePolicy: 'biometric')
   static const biometricsEnabled = PrefKey<bool>();
 
   @Pref(serializer: DateTimeSerializer)
@@ -28,7 +88,8 @@ class AuthPrefs {
 
 // ── sub-group: settings ──────────────────────────────────────────────────────
 
-@Prefs()
+/// All writes to SettingsPrefs are audit-logged via the 'auditLog' policy.
+@Prefs(writePolicy: 'auditLog')
 class SettingsPrefs {
   @Pref(defaultValue: ThemeMode.system, serializer: EnumPrefSerializer)
   static const themeMode = PrefKey<ThemeMode>();
@@ -77,6 +138,7 @@ class AppPrefs {
   static const auth = PrefGroupKey<AuthPrefs>();
   static const settings = PrefGroupKey<SettingsPrefs>();
 
-  @Pref(serializer: UserProfileSerializer)
+  /// Requires biometric auth to overwrite the stored profile.
+  @Pref(serializer: UserProfileSerializer, writePolicy: 'biometric')
   static const currentUser = PrefKey<UserProfile>();
 }

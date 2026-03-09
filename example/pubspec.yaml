@@ -1,0 +1,16 @@
+name: my_package_example
+publish_to: none
+
+environment:
+  sdk: '>=3.3.0 <4.0.0'
+
+dependencies:
+  local_auth: ^3.0.1
+  flutter:
+    sdk: flutter
+
+  typed_prefs:
+    path: ../
+
+flutter:
+  uses-material-design: true

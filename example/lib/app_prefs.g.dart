@@ -10,11 +10,13 @@ abstract final class AuthPrefsKeys {
   static const vaultKey = PreferenceKey<String>(
     key: 'vault_key',
     storage: PreferenceStorage.secure,
+    writePolicy: 'writeOnce',
   );
   static const biometricsEnabled = PreferenceKey<bool>(
     key: 'biometrics_enabled',
     storage: PreferenceStorage.secure,
     defaultValue: false,
+    writePolicy: 'biometric',
   );
   static const lastSyncAt = PreferenceKey<DateTime>(
     key: 'last_sync_at',
@@ -64,12 +66,14 @@ abstract final class SettingsPrefsKeys {
     key: 'theme_mode',
     storage: PreferenceStorage.shared,
     defaultValue: ThemeMode.system,
+    writePolicy: 'auditLog',
     serializer: EnumPrefSerializer<ThemeMode>(ThemeMode.values),
   );
   static const preferredLocales = PreferenceKey<List<String>>(
     key: 'preferred_locales',
     storage: PreferenceStorage.shared,
     defaultValue: ['ru', 'en'],
+    writePolicy: 'auditLog',
     serializer: StringListPrefSerializer(),
   );
 }
@@ -112,6 +116,7 @@ abstract final class AppPrefsKeys {
   static const currentUser = PreferenceKey<UserProfile>(
     key: 'current_user',
     storage: PreferenceStorage.shared,
+    writePolicy: 'biometric',
     serializer: UserProfileSerializer(),
   );
 }
