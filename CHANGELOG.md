@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.0.3
+
+- Added named write policies resolved through `PreferencesService` for guarding
+  `set` and `remove` operations.
+- Added `writePolicy` support to `PreferenceKey`, `@Pref`, and `@Prefs` so
+  generated accessors can opt into runtime authorization.
+
 ## 1.0.2
 
 - `EnumPrefSerializer` can now be specified explicitly via
@@ -25,7 +32,7 @@
 
 - Added typed runtime API for SharedPreferences and flutter_secure_storage.
 - Added `PreferenceKey<T>`, `PreferencesStorageRouter` and `PreferencesService`.
-- `PreferencesService` is now a singleton — initialize once with
+- `PreferencesService` is now a singleton - initialize once with
   `PreferencesService.initialize()`, access anywhere via
   `PreferencesService.instance`.
 - Added reactive `watch()` support for preference updates.

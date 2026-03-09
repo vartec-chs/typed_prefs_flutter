@@ -2,6 +2,7 @@ export 'src/annotations.dart';
 export 'src/core/pref_serializer.dart';
 export 'src/core/pref_types.dart';
 export 'src/core/preference_key.dart';
+export 'src/core/preference_write_policy.dart';
 export 'src/core/preferences_service.dart';
 export 'src/core/preferences_storage_router.dart';
 export 'src/core/storage_adapters.dart';

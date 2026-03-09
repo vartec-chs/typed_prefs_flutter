@@ -5,13 +5,20 @@ class Prefs {
   /// When true, all keys in this class are stored in secure storage,
   /// overriding any individual [@Pref(protected:)] settings.
   final bool protected;
+  final String? writePolicy;
 
-  const Prefs({this.accessorName, this.keysName, this.protected = false});
+  const Prefs({
+    this.accessorName,
+    this.keysName,
+    this.protected = false,
+    this.writePolicy,
+  });
 }
 
 class Pref {
   final String? key;
   final bool protected;
+  final String? writePolicy;
   final Object? defaultValue;
   final String description;
   final Type? serializer;
@@ -19,6 +26,7 @@ class Pref {
   const Pref({
     this.key,
     this.protected = false,
+    this.writePolicy,
     this.defaultValue,
     this.description = '',
     this.serializer,

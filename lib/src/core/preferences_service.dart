@@ -4,6 +4,7 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'preference_key.dart';
+import 'preference_write_policy.dart';
 import 'preferences_storage_router.dart';
 import 'storage_adapters.dart';
 
@@ -20,14 +21,16 @@ class PreferencesService {
   }
 
   final PreferencesStorageRouter router;
+  final Map<String, PreferenceWritePolicy> _writePolicies;
   final Map<String, StreamController<Object?>> _controllers =
       <String, StreamController<Object?>>{};
 
-  PreferencesService._(this.router);
+  PreferencesService._(this.router, this._writePolicies);
 
   static Future<PreferencesService> initialize({
     SharedPreferences? sharedPreferences,
     FlutterSecureStorage secureStorage = const FlutterSecureStorage(),
+    Map<String, PreferenceWritePolicy> writePolicies = const {},
   }) async {
     if (_instance != null) return _instance!;
     final shared = sharedPreferences ?? await SharedPreferences.getInstance();
@@ -36,11 +39,12 @@ class PreferencesService {
         shared: SharedPreferencesStoreAdapter(shared),
         secure: FlutterSecureStorageAdapter(secureStorage),
       ),
+      Map<String, PreferenceWritePolicy>.from(writePolicies),
     );
     return _instance!;
   }
 
-  /// Resets the singleton — intended for testing only.
+  /// Resets the singleton - intended for testing only.
   static void resetForTesting() {
     _instance?.dispose();
     _instance = null;
@@ -54,11 +58,21 @@ class PreferencesService {
   }
 
   Future<void> remove<T>(PreferenceKey<T> key) async {
+    await _authorizeWrite(
+      key,
+      operation: PreferenceWriteOperation.remove,
+      nextValue: key.defaultValue,
+    );
     await router.delete(key);
     _emit(key, key.defaultValue);
   }
 
   Future<void> set<T>(PreferenceKey<T> key, T value) async {
+    await _authorizeWrite(
+      key,
+      operation: PreferenceWriteOperation.set,
+      nextValue: value,
+    );
     await router.write(key, value);
     _emit(key, value);
   }
@@ -79,11 +93,26 @@ class PreferencesService {
     }, isBroadcast: true);
   }
 
+  void registerWritePolicy(String name, PreferenceWritePolicy policy) {
+    _writePolicies[name] = policy;
+  }
+
+  void registerWritePolicies(Map<String, PreferenceWritePolicy> policies) {
+    _writePolicies.addAll(policies);
+  }
+
+  void unregisterWritePolicy(String name) {
+    _writePolicies.remove(name);
+  }
+
+  PreferenceWritePolicy? writePolicy(String name) => _writePolicies[name];
+
   void dispose() {
     for (final controller in _controllers.values) {
       controller.close();
     }
     _controllers.clear();
+    _writePolicies.clear();
   }
 
   StreamController<Object?> _controllerFor(String key) {
@@ -99,6 +128,33 @@ class PreferencesService {
     }
 
     _controllers[key.key]!.add(value);
+  }
+
+  Future<void> _authorizeWrite<T>(
+    PreferenceKey<T> key, {
+    required PreferenceWriteOperation operation,
+    required T? nextValue,
+  }) async {
+    final policyName = key.writePolicy;
+    if (policyName == null) {
+      return;
+    }
+
+    final policy = _writePolicies[policyName];
+    if (policy == null) {
+      throw StateError(
+        'Write policy "$policyName" is not registered for key "${key.key}".',
+      );
+    }
+
+    await policy.authorize<T>(
+      PreferenceWriteRequest<T>(
+        key: key,
+        operation: operation,
+        currentValue: await get(key),
+        nextValue: nextValue,
+      ),
+    );
   }
 }
 

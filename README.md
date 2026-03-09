@@ -128,6 +128,7 @@ prefs.settings.watchThemeMode().listen((mode) {
 | `accessorName` | `String` | `${ClassName}Store` | Override the generated accessor class name.       |
 | `keysName`     | `String` | `${ClassName}Keys`  | Override the generated keys class name.           |
 | `protected`    | `bool`   | `false`             | Force all keys in this class into secure storage. |
+| `writePolicy`  | `String` | -                   | Apply the same named write policy to all keys in this class. |
 
 ## @Pref options
 
@@ -135,6 +136,7 @@ prefs.settings.watchThemeMode().listen((mode) {
 | -------------- | -------- | ------------------------ | ------------------------------------------------------------ |
 | `key`          | `String` | snake_case of field name | Override the storage key string.                             |
 | `protected`    | `bool`   | `false`                  | Store this individual key in secure storage.                 |
+| `writePolicy`  | `String` | -                        | Named runtime write policy checked before `set/remove`.      |
 | `defaultValue` | `Object` | —                        | Value returned when the key is absent.                       |
 | `description`  | `String` | `''`                     | Documentation string embedded in the generated key constant. |
 | `serializer`   | `Type`   | —                        | Custom `PrefSerializer<T>` class.                            |
@@ -154,6 +156,7 @@ const themeModeKey = PreferenceKey<String>(
 const biometricsKey = PreferenceKey<bool>(
   key: 'biometrics_enabled',
   storage: PreferenceStorage.secure,
+  writePolicy: 'auth',
   defaultValue: false,
 );
 
@@ -166,6 +169,34 @@ service.watch(themeModeKey).listen((value) {
   print('Theme changed: $value');
 });
 ```
+
+## Write policies
+
+Write policies are runtime guards resolved by name through `PreferencesService`.
+Use them for flows like biometric auth, PIN confirmation, or custom app-level
+permission checks before a preference is changed.
+
+```dart
+class BiometricPolicy implements PreferenceWritePolicy {
+  @override
+  Future<void> authorize<T>(PreferenceWriteRequest<T> request) async {
+    final authenticated = await localAuth.authenticate(
+      localizedReason: 'Confirm preference change',
+    );
+    if (!authenticated) {
+      throw const PreferenceWriteDeniedException('Authentication required');
+    }
+  }
+}
+
+await PreferencesService.initialize(
+  writePolicies: {'auth': BiometricPolicy()},
+);
+```
+
+Apply a policy through PreferenceKey(writePolicy: 'auth'),
+@Pref(writePolicy: 'auth'), or @Prefs(writePolicy: 'auth'). The policy runs
+before both `set()` and `remove()`.
 
 ## Custom serializers
 
@@ -215,3 +246,5 @@ setUp(() async {
 
 A runnable Flutter example is in [example/lib/main.dart](example/lib/main.dart)
 and [example/lib/app_prefs.dart](example/lib/app_prefs.dart).
+
+

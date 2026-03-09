@@ -27,6 +27,7 @@ class PrefsGenerator extends GeneratorForAnnotation<Prefs> {
     final accessorName = annotation.peek('accessorName')?.stringValue;
     final keysName = annotation.peek('keysName')?.stringValue;
     final classProtected = annotation.peek('protected')?.boolValue ?? false;
+    final classWritePolicy = annotation.peek('writePolicy')?.stringValue;
     final resolvedAccessorName = accessorName ?? '${className}Store';
     final resolvedKeysName = keysName ?? '${className}Keys';
     final extensionName = '${className}TypedPrefsExtension';
@@ -39,7 +40,13 @@ class PrefsGenerator extends GeneratorForAnnotation<Prefs> {
 
     final prefFields = allConst
         .where(_isPrefKeyField)
-        .map((field) => _readField(field, classProtected: classProtected))
+        .map(
+          (field) => _readField(
+            field,
+            classProtected: classProtected,
+            classWritePolicy: classWritePolicy,
+          ),
+        )
         .toList();
     final groupFields = allConst
         .where(_isGroupKeyField)
@@ -60,7 +67,7 @@ class PrefsGenerator extends GeneratorForAnnotation<Prefs> {
 
     final buffer = StringBuffer();
 
-    // Keys class — only when there are direct pref fields.
+    // Keys class - only when there are direct pref fields.
     if (prefFields.isNotEmpty) {
       buffer.writeln('abstract final class $resolvedKeysName {');
 
@@ -76,6 +83,10 @@ class PrefsGenerator extends GeneratorForAnnotation<Prefs> {
 
         if (field.defaultValueCode != null) {
           buffer.writeln('    defaultValue: ${field.defaultValueCode},');
+        }
+
+        if (field.writePolicy != null) {
+          buffer.writeln("    writePolicy: '${_escape(field.writePolicy!)}',");
         }
 
         if (field.description.isNotEmpty) {
@@ -94,7 +105,7 @@ class PrefsGenerator extends GeneratorForAnnotation<Prefs> {
         ..writeln();
     }
 
-    // Accessor class — always generated.
+    // Accessor class - always generated.
     buffer
       ..writeln('class $resolvedAccessorName {')
       ..writeln('  final PreferencesService _service;')
@@ -215,6 +226,7 @@ class PrefsGenerator extends GeneratorForAnnotation<Prefs> {
   _GeneratedField _readField(
     FieldElement field, {
     bool classProtected = false,
+    String? classWritePolicy,
   }) {
     final type = field.type;
     if (type is! InterfaceType || type.typeArguments.length != 1) {
@@ -236,6 +248,8 @@ class PrefsGenerator extends GeneratorForAnnotation<Prefs> {
     final description = prefReader?.peek('description')?.stringValue ?? '';
     final isProtected =
         classProtected || (prefReader?.peek('protected')?.boolValue ?? false);
+    final writePolicy =
+        prefReader?.peek('writePolicy')?.stringValue ?? classWritePolicy;
     final serializerType = prefReader?.peek('serializer')?.typeValue;
     final defaultValueObject = prefReader?.peek('defaultValue')?.objectValue;
 
@@ -251,6 +265,7 @@ class PrefsGenerator extends GeneratorForAnnotation<Prefs> {
       isNullable: isNullable,
       storageKey: storageKey,
       protected: isProtected,
+      writePolicy: writePolicy,
       description: description,
       defaultValueCode: defaultValueObject == null
           ? null
@@ -292,7 +307,7 @@ class PrefsGenerator extends GeneratorForAnnotation<Prefs> {
 
   String? _serializerExpression(DartType prefType, DartType? serializerType) {
     if (serializerType != null) {
-      // EnumPrefSerializer requires the enum values list — generate it from the field type.
+      // EnumPrefSerializer requires the enum values list - generate it from the field type.
       final rawName = serializerType.element?.displayName ?? '';
       if (rawName == 'EnumPrefSerializer') {
         final typeName = prefType.getDisplayString().replaceFirst('?', '');
@@ -430,6 +445,7 @@ class _GeneratedField {
   final bool isNullable;
   final String storageKey;
   final bool protected;
+  final String? writePolicy;
   final String description;
   final String? defaultValueCode;
   final String? serializerCode;
@@ -442,6 +458,7 @@ class _GeneratedField {
     required this.isNullable,
     required this.storageKey,
     required this.protected,
+    required this.writePolicy,
     required this.description,
     required this.defaultValueCode,
     required this.serializerCode,
