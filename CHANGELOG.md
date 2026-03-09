@@ -1,3 +1,9 @@
+## 1.0.0
+
+- Stabilized API, no breaking changes since 0.1.0.
+- Updated to null safety.
+- Updated dependencies to latest versions.
+
 ## 0.1.0
 
 - Added typed runtime API for SharedPreferences and flutter_secure_storage.
