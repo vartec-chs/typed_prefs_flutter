@@ -1,3 +1,9 @@
+# Changelog
+
+## 1.0.1
+
+- Updated dependencies to latest versions.
+
 ## 1.0.0
 
 - Stabilized API, no breaking changes since 0.1.0.
