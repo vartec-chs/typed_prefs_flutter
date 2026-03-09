@@ -30,7 +30,7 @@ optional code generation for ergonomic, boilerplate-free accessors.
 
 ```yaml
 dependencies:
-  typed_prefs: ^0.0.1
+  typed_prefs: ^1.0.0
 
 dev_dependencies:
   build_runner: ^2.12.2
