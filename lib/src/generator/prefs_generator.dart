@@ -37,7 +37,10 @@ class PrefsGenerator extends GeneratorForAnnotation<Prefs> {
         .where((field) => field.isStatic && field.isConst)
         .toList();
 
-    final prefFields = allConst.where(_isPrefKeyField).map(_readField).toList();
+    final prefFields = allConst
+        .where(_isPrefKeyField)
+        .map((field) => _readField(field, classProtected: classProtected))
+        .toList();
     final groupFields = allConst
         .where(_isGroupKeyField)
         .map(_readGroupField)
@@ -443,8 +446,8 @@ class _GeneratedField {
       return '  Future<$readTypeName> get$pascalName() => $name.get();';
     }
 
-    return '  Future<$readTypeName> get$pascalName() => '
-        '$name.get().then((value) => value as $readTypeName);';
+    return '  Future<$readTypeName> get$pascalName() async => '
+        '(await $name.get()) ?? $defaultValueCode;';
   }
 
   String watcherCode(String pascalName) {
@@ -453,8 +456,9 @@ class _GeneratedField {
     }
 
     return '  Stream<$readTypeName> watch$pascalName() => '
-        '$name.watch().where((value) => value != null).cast<$readTypeName>();';
+        '$name.watch().map((value) => value ?? $defaultValueCode);';
   }
+
 }
 
 class _GeneratedGroupField {
@@ -466,3 +470,6 @@ class _GeneratedGroupField {
     required this.accessorClassName,
   });
 }
+
+
+
