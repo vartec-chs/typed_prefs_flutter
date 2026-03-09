@@ -292,6 +292,12 @@ class PrefsGenerator extends GeneratorForAnnotation<Prefs> {
 
   String? _serializerExpression(DartType prefType, DartType? serializerType) {
     if (serializerType != null) {
+      // EnumPrefSerializer requires the enum values list — generate it from the field type.
+      final rawName = serializerType.element?.displayName ?? '';
+      if (rawName == 'EnumPrefSerializer') {
+        final typeName = prefType.getDisplayString().replaceFirst('?', '');
+        return 'EnumPrefSerializer<$typeName>($typeName.values)';
+      }
       return '${serializerType.getDisplayString()}()';
     }
 
@@ -458,7 +464,6 @@ class _GeneratedField {
     return '  Stream<$readTypeName> watch$pascalName() => '
         '$name.watch().map((value) => value ?? $defaultValueCode);';
   }
-
 }
 
 class _GeneratedGroupField {
@@ -470,6 +475,3 @@ class _GeneratedGroupField {
     required this.accessorClassName,
   });
 }
-
-
-

@@ -30,11 +30,42 @@ class AuthPrefs {
 
 @Prefs()
 class SettingsPrefs {
-  @Pref(defaultValue: ThemeMode.system)
+  @Pref(defaultValue: ThemeMode.system, serializer: EnumPrefSerializer)
   static const themeMode = PrefKey<ThemeMode>();
 
   @Pref(defaultValue: <String>['ru', 'en'])
   static const preferredLocales = PrefKey<List<String>>();
+}
+
+// ── custom model stored via JsonPrefSerializer ───────────────────────────────
+
+class UserProfile {
+  final String name;
+  final int age;
+
+  const UserProfile({required this.name, required this.age});
+
+  factory UserProfile.fromJson(Object? json) {
+    final map = json as Map<String, dynamic>;
+    return UserProfile(name: map['name'] as String, age: map['age'] as int);
+  }
+
+  Map<String, dynamic> toJson() => {'name': name, 'age': age};
+}
+
+class UserProfileSerializer extends PrefSerializer<UserProfile> {
+  const UserProfileSerializer();
+
+  static final _json = JsonPrefSerializer<UserProfile>(
+    fromJson: UserProfile.fromJson,
+    toJson: (v) => v.toJson(),
+  );
+
+  @override
+  UserProfile decode(String value) => _json.decode(value);
+
+  @override
+  String encode(UserProfile value) => _json.encode(value);
 }
 
 // ── root accessor that composes both sub-groups ──────────────────────────────
@@ -45,4 +76,7 @@ class SettingsPrefs {
 class AppPrefs {
   static const auth = PrefGroupKey<AuthPrefs>();
   static const settings = PrefGroupKey<SettingsPrefs>();
+
+  @Pref(serializer: UserProfileSerializer)
+  static const currentUser = PrefKey<UserProfile>();
 }

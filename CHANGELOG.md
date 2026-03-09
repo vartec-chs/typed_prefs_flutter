@@ -1,5 +1,16 @@
 # Changelog
 
+## 1.0.2
+
+- `EnumPrefSerializer` can now be specified explicitly via
+  `@Pref(serializer: EnumPrefSerializer)`; the generator automatically injects
+  the correct `T.values` argument.
+- Custom serializers subclassing `PrefSerializer<T>` with a no-arg const
+  constructor work correctly when passed to `@Pref(serializer: ...)`.
+- Fixed generator: explicit `serializer:` type argument now properly resolves
+  `EnumPrefSerializer` to `EnumPrefSerializer<T>(T.values)` instead of
+  `EnumPrefSerializer<dynamic>()`.
+
 ## 1.0.1
 
 - Updated dependencies to latest versions.

@@ -108,6 +108,14 @@ extension SettingsPrefsTypedPrefsExtension on PreferencesService {
   SettingsPrefsStore get settingsPrefs => SettingsPrefsStore(this);
 }
 
+abstract final class AppPrefsKeys {
+  static const currentUser = PreferenceKey<UserProfile>(
+    key: 'current_user',
+    storage: PreferenceStorage.shared,
+    serializer: UserProfileSerializer(),
+  );
+}
+
 class AppPrefsStore {
   final PreferencesService _service;
 
@@ -116,6 +124,14 @@ class AppPrefsStore {
   AuthPrefsStore get auth => AuthPrefsStore(_service);
 
   SettingsPrefsStore get settings => SettingsPrefsStore(_service);
+
+  TypedPrefAccessor<UserProfile> get currentUser =>
+      TypedPrefAccessor<UserProfile>(_service, AppPrefsKeys.currentUser);
+
+  Future<UserProfile?> getCurrentUser() => currentUser.get();
+  Future<void> setCurrentUser(UserProfile value) => currentUser.set(value);
+  Future<void> removeCurrentUser() => currentUser.remove();
+  Stream<UserProfile?> watchCurrentUser() => currentUser.watch();
 }
 
 extension AppPrefsTypedPrefsExtension on PreferencesService {
