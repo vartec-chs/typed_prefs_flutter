@@ -1,4 +1,5 @@
 import 'preference_key.dart';
+import 'preference_write_policy.dart';
 import 'preferences_service.dart';
 
 class TypedPrefAccessor<T> {
@@ -11,9 +12,11 @@ class TypedPrefAccessor<T> {
 
   Future<T?> get() => _service.get(key);
 
-  Future<void> remove() => _service.remove(key);
+  Future<void> remove({PreferenceWriteErrorCallback? onWriteError}) =>
+      _service.remove(key, onWriteError: onWriteError);
 
-  Future<void> set(T value) => _service.set(key, value);
+  Future<void> set(T value, {PreferenceWriteErrorCallback? onWriteError}) =>
+      _service.set(key, value, onWriteError: onWriteError);
 
   Stream<T?> watch() => _service.watch(key);
 }

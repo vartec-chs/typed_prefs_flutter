@@ -3,7 +3,7 @@ description:
   'A code generator for Flutter that creates type-safe wrappers around
   SharedPreferences and FlutterSecureStorage, allowing developers to define
   their preferences in a structured way and access them with strong typing.'
-version: 1.0.3
+version: 1.0.4
 repository: https://github.com/vartec-chs/typed_prefs_flutter
 publish_to: https://pub.dev
 homepage: https://github.com/vartec-chs/typed_prefs_flutter

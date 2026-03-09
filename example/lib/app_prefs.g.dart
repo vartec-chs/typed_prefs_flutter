@@ -34,8 +34,12 @@ class AuthPrefsStore {
       TypedPrefAccessor<String>(_service, AuthPrefsKeys.vaultKey);
 
   Future<String?> getVaultKey() => vaultKey.get();
-  Future<void> setVaultKey(String value) => vaultKey.set(value);
-  Future<void> removeVaultKey() => vaultKey.remove();
+  Future<void> setVaultKey(
+    String value, {
+    PreferenceWriteErrorCallback? onWriteError,
+  }) => vaultKey.set(value, onWriteError: onWriteError);
+  Future<void> removeVaultKey({PreferenceWriteErrorCallback? onWriteError}) =>
+      vaultKey.remove(onWriteError: onWriteError);
   Stream<String?> watchVaultKey() => vaultKey.watch();
 
   TypedPrefAccessor<bool> get biometricsEnabled =>
@@ -43,8 +47,13 @@ class AuthPrefsStore {
 
   Future<bool> getBiometricsEnabled() async =>
       (await biometricsEnabled.get()) ?? false;
-  Future<void> setBiometricsEnabled(bool value) => biometricsEnabled.set(value);
-  Future<void> removeBiometricsEnabled() => biometricsEnabled.remove();
+  Future<void> setBiometricsEnabled(
+    bool value, {
+    PreferenceWriteErrorCallback? onWriteError,
+  }) => biometricsEnabled.set(value, onWriteError: onWriteError);
+  Future<void> removeBiometricsEnabled({
+    PreferenceWriteErrorCallback? onWriteError,
+  }) => biometricsEnabled.remove(onWriteError: onWriteError);
   Stream<bool> watchBiometricsEnabled() =>
       biometricsEnabled.watch().map((value) => value ?? false);
 
@@ -88,8 +97,12 @@ class SettingsPrefsStore {
 
   Future<ThemeMode> getThemeMode() async =>
       (await themeMode.get()) ?? ThemeMode.system;
-  Future<void> setThemeMode(ThemeMode value) => themeMode.set(value);
-  Future<void> removeThemeMode() => themeMode.remove();
+  Future<void> setThemeMode(
+    ThemeMode value, {
+    PreferenceWriteErrorCallback? onWriteError,
+  }) => themeMode.set(value, onWriteError: onWriteError);
+  Future<void> removeThemeMode({PreferenceWriteErrorCallback? onWriteError}) =>
+      themeMode.remove(onWriteError: onWriteError);
   Stream<ThemeMode> watchThemeMode() =>
       themeMode.watch().map((value) => value ?? ThemeMode.system);
 
@@ -101,9 +114,13 @@ class SettingsPrefsStore {
 
   Future<List<String>> getPreferredLocales() async =>
       (await preferredLocales.get()) ?? ['ru', 'en'];
-  Future<void> setPreferredLocales(List<String> value) =>
-      preferredLocales.set(value);
-  Future<void> removePreferredLocales() => preferredLocales.remove();
+  Future<void> setPreferredLocales(
+    List<String> value, {
+    PreferenceWriteErrorCallback? onWriteError,
+  }) => preferredLocales.set(value, onWriteError: onWriteError);
+  Future<void> removePreferredLocales({
+    PreferenceWriteErrorCallback? onWriteError,
+  }) => preferredLocales.remove(onWriteError: onWriteError);
   Stream<List<String>> watchPreferredLocales() =>
       preferredLocales.watch().map((value) => value ?? ['ru', 'en']);
 }
@@ -134,8 +151,13 @@ class AppPrefsStore {
       TypedPrefAccessor<UserProfile>(_service, AppPrefsKeys.currentUser);
 
   Future<UserProfile?> getCurrentUser() => currentUser.get();
-  Future<void> setCurrentUser(UserProfile value) => currentUser.set(value);
-  Future<void> removeCurrentUser() => currentUser.remove();
+  Future<void> setCurrentUser(
+    UserProfile value, {
+    PreferenceWriteErrorCallback? onWriteError,
+  }) => currentUser.set(value, onWriteError: onWriteError);
+  Future<void> removeCurrentUser({
+    PreferenceWriteErrorCallback? onWriteError,
+  }) => currentUser.remove(onWriteError: onWriteError);
   Stream<UserProfile?> watchCurrentUser() => currentUser.watch();
 }
 

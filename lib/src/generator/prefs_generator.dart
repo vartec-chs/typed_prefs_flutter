@@ -129,10 +129,8 @@ class PrefsGenerator extends GeneratorForAnnotation<Prefs> {
         )
         ..writeln()
         ..writeln(field.getterCode(pascal))
-        ..writeln(
-          '  Future<void> set$pascal(${field.typeName} value) => ${field.name}.set(value);',
-        )
-        ..writeln('  Future<void> remove$pascal() => ${field.name}.remove();')
+        ..writeln(field.setterCode(pascal))
+        ..writeln(field.removerCode(pascal))
         ..writeln(field.watcherCode(pascal))
         ..writeln();
     }
@@ -471,6 +469,27 @@ class _GeneratedField {
 
     return '  Future<$readTypeName> get$pascalName() async => '
         '(await $name.get()) ?? $defaultValueCode;';
+  }
+
+  String setterCode(String pascalName) {
+    if (writePolicy == null) {
+      return '  Future<void> set$pascalName($typeName value) => '
+          '$name.set(value);';
+    }
+
+    return '  Future<void> set$pascalName($typeName value, '
+        '{PreferenceWriteErrorCallback? onWriteError}) => '
+        '$name.set(value, onWriteError: onWriteError);';
+  }
+
+  String removerCode(String pascalName) {
+    if (writePolicy == null) {
+      return '  Future<void> remove$pascalName() => $name.remove();';
+    }
+
+    return '  Future<void> remove$pascalName('
+        '{PreferenceWriteErrorCallback? onWriteError}) => '
+        '$name.remove(onWriteError: onWriteError);';
   }
 
   String watcherCode(String pascalName) {

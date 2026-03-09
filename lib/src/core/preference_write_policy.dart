@@ -20,6 +20,29 @@ class PreferenceWriteRequest<T> {
   bool get isRemoval => operation == PreferenceWriteOperation.remove;
 }
 
+class PreferenceWriteFailure {
+  final String? policyName;
+  final String key;
+  final PreferenceWriteOperation operation;
+  final Object? currentValue;
+  final Object? nextValue;
+  final Object error;
+  final StackTrace stackTrace;
+
+  const PreferenceWriteFailure({
+    required this.policyName,
+    required this.key,
+    required this.operation,
+    required this.currentValue,
+    required this.nextValue,
+    required this.error,
+    required this.stackTrace,
+  });
+}
+
+typedef PreferenceWriteErrorCallback =
+    FutureOr<void> Function(PreferenceWriteFailure failure);
+
 abstract interface class PreferenceWritePolicy {
   FutureOr<void> authorize<T>(PreferenceWriteRequest<T> request);
 }

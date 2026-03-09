@@ -57,22 +57,39 @@ class PreferencesService {
     return value ?? key.defaultValue;
   }
 
-  Future<void> remove<T>(PreferenceKey<T> key) async {
-    await _authorizeWrite(
+  Future<void> remove<T>(
+    PreferenceKey<T> key, {
+    PreferenceWriteErrorCallback? onWriteError,
+  }) async {
+    final authorized = await _authorizeWrite(
       key,
       operation: PreferenceWriteOperation.remove,
       nextValue: key.defaultValue,
+      onWriteError: onWriteError,
     );
+    if (!authorized) {
+      return;
+    }
+
     await router.delete(key);
     _emit(key, key.defaultValue);
   }
 
-  Future<void> set<T>(PreferenceKey<T> key, T value) async {
-    await _authorizeWrite(
+  Future<void> set<T>(
+    PreferenceKey<T> key,
+    T value, {
+    PreferenceWriteErrorCallback? onWriteError,
+  }) async {
+    final authorized = await _authorizeWrite(
       key,
       operation: PreferenceWriteOperation.set,
       nextValue: value,
+      onWriteError: onWriteError,
     );
+    if (!authorized) {
+      return;
+    }
+
     await router.write(key, value);
     _emit(key, value);
   }
@@ -130,31 +147,84 @@ class PreferencesService {
     _controllers[key.key]!.add(value);
   }
 
-  Future<void> _authorizeWrite<T>(
+  Future<bool> _authorizeWrite<T>(
     PreferenceKey<T> key, {
     required PreferenceWriteOperation operation,
     required T? nextValue,
+    PreferenceWriteErrorCallback? onWriteError,
   }) async {
     final policyName = key.writePolicy;
     if (policyName == null) {
-      return;
+      return true;
     }
 
+    final currentValue = await get(key);
     final policy = _writePolicies[policyName];
     if (policy == null) {
-      throw StateError(
-        'Write policy "$policyName" is not registered for key "${key.key}".',
+      return _handleWriteFailure(
+        policyName: policyName,
+        key: key,
+        operation: operation,
+        currentValue: currentValue,
+        nextValue: nextValue,
+        error: StateError(
+          'Write policy "$policyName" is not registered for key "${key.key}".',
+        ),
+        stackTrace: StackTrace.current,
+        onWriteError: onWriteError,
       );
     }
 
-    await policy.authorize<T>(
-      PreferenceWriteRequest<T>(
+    try {
+      await policy.authorize<T>(
+        PreferenceWriteRequest<T>(
+          key: key,
+          operation: operation,
+          currentValue: currentValue,
+          nextValue: nextValue,
+        ),
+      );
+      return true;
+    } catch (error, stackTrace) {
+      return _handleWriteFailure(
+        policyName: policyName,
         key: key,
         operation: operation,
-        currentValue: await get(key),
+        currentValue: currentValue,
         nextValue: nextValue,
-      ),
-    );
+        error: error,
+        stackTrace: stackTrace,
+        onWriteError: onWriteError,
+      );
+    }
+  }
+
+  Future<bool> _handleWriteFailure<T>({
+    required String? policyName,
+    required PreferenceKey<T> key,
+    required PreferenceWriteOperation operation,
+    required T? currentValue,
+    required T? nextValue,
+    required Object error,
+    required StackTrace stackTrace,
+    required PreferenceWriteErrorCallback? onWriteError,
+  }) async {
+    if (onWriteError != null) {
+      await onWriteError(
+        PreferenceWriteFailure(
+          policyName: policyName,
+          key: key.key,
+          operation: operation,
+          currentValue: currentValue,
+          nextValue: nextValue,
+          error: error,
+          stackTrace: stackTrace,
+        ),
+      );
+      return false;
+    }
+
+    Error.throwWithStackTrace(error, stackTrace);
   }
 }
 
