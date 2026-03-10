@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.1.0
+
+- Released on pub.dev.
+
 ## 1.0.4
 
 - Added per-call `onWriteError` callbacks to guarded `set` and `remove`
@@ -8,8 +12,8 @@
   callback and are no longer rethrown for that call.
 - Added `PreferenceWriteFailure` and `PreferenceWriteErrorCallback` to expose
   structured write-policy error context.
-- Updated generated `setX` and `removeX` methods to include `onWriteError`
-  only for fields that use `writePolicy`.
+- Updated generated `setX` and `removeX` methods to include `onWriteError` only
+  for fields that use `writePolicy`.
 
 ## 1.0.3
 
