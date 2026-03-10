@@ -5,7 +5,6 @@ description:
   their preferences in a structured way and access them with strong typing.'
 version: 1.1.0
 repository: https://github.com/vartec-chs/typed_prefs_flutter
-publish_to: https://pub.dev
 homepage: https://github.com/vartec-chs/typed_prefs_flutter
 
 environment:
