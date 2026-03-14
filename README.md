@@ -59,7 +59,7 @@ Add the package and code generator:
 
 ```yaml
 dependencies:
-  typed_prefs: ^1.0.4
+  typed_prefs: ^1.1.0
 
 dev_dependencies:
   build_runner: ^2.12.2
